@@ -1,16 +1,2 @@
 # share_the_bill
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Sometimes we have dinner, lunch or breakfast together with comrades. Someone collect and pay the bill then others can pay their bill latter. this application will help payer to calculate &amp; split the bill each person quick and easy, then we can go search another restaurant. 
