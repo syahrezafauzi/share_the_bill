@@ -1,41 +1,35 @@
-
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:share_the_bill/views/home/menu_form.dart';
 
 class HomeController extends GetxController {
   late Box<Map> box;
   var left = Rx<double>(0);
-  var grandTotal = Rx<double?>(469700);
-  var title = "Bill lunch @CITY ICE CREAM".obs;
+  var grandTotal = Rx<double?>(452000);
+  var title = "Bill Gundaling".obs;
   var menu = <String, double>{
-    "MARTABAK MESIR PANAS": 35000,
-    "MIE TIAW KUAH": 36000,
-    "NASI CAP CAI GORENG": 39000,
-    "NASI AYAM KECAP": 40000,
-    "NASI KARI DAGING SAPI": 42000,
-    "CHICKEN BURGER": 30000,
-    "CHICKEN SPRING ROLL": 22000,
-    "CITY LINK": 22000,
-    "TAHU BALIK TUNA": 20000,
-    "ICE CREAM SHAKE": 28000,
-    "ICE WATER CHESTNUT": 20000,
-    "HOT TEA": 36000,
-    "HOT LEMON TEA": 20000,
-    "SODA MILK": 19000,
-    "AQUA CUP": 0
-  };
+    "Carnivore Pizza": 104348 / 6,
+    "Three Cheese Pizza": 95652 / 7,
+    "Iced Tiramisu Latte": 86087 / 3,
+    "Hot Coffee Latte": 20870,
+    "Hot Green Tea Latte": 20870,
+    "Hot Tea Cinamon": 15652,
+    "Iced Kopi Gula Aren": 23478,
+    "Singkong Goreng": 26086 / 3,
+  }.obs;
   var ppn = 10.obs;
+  var service = RxInt(5);
   var users = <String>[
-    "Reza",
-    "Willy",
     "Eric",
+    "Denis",
     "Nanda",
-    "Pipin",
-    "Tinesh",
-    "Theresia",
-    "Rivaldo",
+    "Reza",
+    "Icha",
+    "Victor",
+    "Williandy",
   ].obs;
 
   var totals = <double>[].obs;
@@ -49,12 +43,12 @@ class HomeController extends GetxController {
   final formatCurrency = NumberFormat.simpleCurrency(locale: "id-ID");
 
   @override
-  void onInit(){
+  void onInit() {
     super.onInit();
     _init();
   }
 
-  void _init() async{
+  void _init() async {
     box = await Hive.openBox(title.value);
   }
 
@@ -103,8 +97,9 @@ class HomeController extends GetxController {
 
   paid(String user) {
     if (!isPaid(user)) {
-      var calculate = _calculate(user);
-      var entry = paids.entries.where((element) => element.key == user).firstOrNull;
+      var calculate = _calculate(user: user);
+      var entry =
+          paids.entries.where((element) => element.key == user).firstOrNull;
       entry = entry ??= MapEntry<String, double?>(user, calculate.elementAt(2));
       paids.addEntries([entry]);
     }
@@ -121,55 +116,98 @@ class HomeController extends GetxController {
     return result;
   }
 
-  List<double?> _calculate(String user) {
+  List<double?> _calculate({String? user}) {
     var result = <double?>[null, null, null];
-    var items = selectedMenus.value.entries
-        .where((element) => element.key == user)
-        .firstOrNull
-        ?.value;
-    if (items != null) {
+    var holder = selectedMenus.value.entries
+        .where((element) => user == null ? true : element.key == user);
+
+    for (var items in holder) {
+      var item = items.value;
       var total = menu.entries
-          .where((element) => items.contains(element.key))
+          .where((element) => item.contains(element.key))
           .map((e) => e.value)
           .sum;
       var _ppn = ppn / 100 * total;
       var gTotal = total + _ppn;
-      result[0] = total;
-      result[1] = _ppn;
-      result[2] = gTotal;
+      result[0] = (result[0] ?? 0) + total;
+      result[1] = (result[1] ?? 0) + _ppn;
+      result[2] = (result[2] ?? 0) + gTotal;
     }
 
     return result;
   }
 
   String total(String user) {
-    var calculate = _calculate(user);
+    var calculate = _calculate(user: user);
     return currency(calculate.elementAt(0));
   }
 
   String totalPpn(String user) {
-    var calculate = _calculate(user);
+    var calculate = _calculate(user: user);
     return currency(calculate.elementAt(1));
   }
 
-  String sum(String user) {
-    var calculate = _calculate(user);
-    return currency(calculate.elementAt(2));
+  String sumPpn() {
+    var calculate = _calculate();
+    return currency(calculate.elementAt(1));
+  }
+
+  String totalService(String user) {
+    var calculate = _calculateService();
+    return currency(calculate);
+  }
+
+  double _calculateService() {
+    var total = _calculateTotalSum();
+    var length = users.length;
+    var result = (total * (service / 100)) / length;
+    return result;
+  }
+
+  String due(String user) {
+    double value = _calculateDue(user);
+    var result = currency(value);
+    return result;
+  }
+
+  double _calculateDue(String user) {
+    var calculate = _calculate(user: user);
+    var value = (calculate.elementAt(2) ?? 0);
+    var service = _calculateService();
+    return value + service;
+  }
+
+  String totalSum() {
+    var calculate = _calculate();
+    var value = (calculate.elementAt(0) ?? 0);
+    return currency(value);
+  }
+
+  double _calculateTotalSum() {
+    var calculate = _calculate();
+    var value = (calculate.elementAt(0) ?? 0);
+    return value;
   }
 
   String totalDue() {
+    double? total = _calculateTotalDue();
+    var service = _calculateService() * users.length;
+
+    return currency((total ?? 0) + service);
+  }
+
+  double? _calculateTotalDue() {
     double? total = null;
     var users = selectedMenus.value.entries.map((e) => e.key).toList();
     users.forEach((user) {
-      var calculate = _calculate(user);
+      var calculate = _calculate(user: user);
       var gTotal = calculate.elementAt(2);
       if (gTotal != null) {
         total ??= 0;
         total = total! + gTotal;
       }
     });
-
-    return currency(total);
+    return total ?? 0;
   }
 
   String totalPaid() {
@@ -188,4 +226,18 @@ class HomeController extends GetxController {
   }
 
   copy() {}
+
+  showMenu() {
+    Get.dialog(MenuForm(menu));
+  }
+
+  String sumService() {
+    double value = _calculateSumService();
+    return currency(value);
+  }
+
+  double _calculateSumService() {
+    var value = _calculateService() * users.length;
+    return value;
+  }
 }

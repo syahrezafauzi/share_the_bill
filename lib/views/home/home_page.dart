@@ -38,6 +38,10 @@ class HomePage extends GetResponsiveView<HomeController> {
                   IconButton(
                       onPressed: () => controller.copy(),
                       icon: Icon(Icons.copy)),
+                  Spacer(),
+                  IconButton(
+                      onPressed: () => controller.showMenu(),
+                      icon: Icon(Icons.menu)),
                 ],
               )),
           Divider(),
@@ -114,6 +118,7 @@ class HomePage extends GetResponsiveView<HomeController> {
           Text("Name"),
           Text("Total"),
           Text("Tax ${controller.ppn}%"),
+          Obx(() => Text("Service ${controller.service}%")),
           Text("Due"),
           Text(""),
         ]),
@@ -152,8 +157,14 @@ class HomePage extends GetResponsiveView<HomeController> {
                         ? TableCell(
                             verticalAlignment:
                                 TableCellVerticalAlignment.middle,
+                            child: Text(controller.totalService(e)))
+                        : SizedBox.shrink()),
+                    Obx(() => controller.selectedMenus.value != null
+                        ? TableCell(
+                            verticalAlignment:
+                                TableCellVerticalAlignment.middle,
                             child: Text(
-                              controller.sum(e),
+                              controller.due(e),
                               style: Theme.of(Get.context!)
                                   .textTheme
                                   .bodyLarge
@@ -183,8 +194,11 @@ class HomePage extends GetResponsiveView<HomeController> {
             .toList(),
         TableRow(children: [
           Text(""),
-          Text(""),
-          Text(""),
+          Obx(() => Text(controller.selectedMenus.value != null
+              ? controller.totalSum()
+              : "")),
+          Obx(()=> controller.selectedMenus.value != null? Text(controller.sumPpn()) : SizedBox.shrink()),
+          Obx(()=> controller.selectedMenus.value != null? Text(controller.sumService()) : SizedBox.shrink()),
           Obx(() => Text(controller.selectedMenus.value != null
               ? controller.totalDue()
               : "")),
@@ -259,7 +273,7 @@ class HomePage extends GetResponsiveView<HomeController> {
                                 ),
                                 Obx(() => controller.selectedMenus.value != null
                                     ? Text(controller
-                                        .sum(controller.users.value[index]))
+                                        .due(controller.users.value[index]))
                                     : SizedBox.shrink()),
                               ],
                             ),
